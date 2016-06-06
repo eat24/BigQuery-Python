@@ -1,8 +1,32 @@
 import six
 import unittest
 
+from bigquery.query_builder import generate_formatter
+
 unittest.TestCase.maxDiff = None
 
+class TestGenerateFunctions(unittest.TestCase):
+    def test_single_function(self):
+        self.assertEqual(generate_formatter('MAX'), 'MAX')
+
+    def test_single_function_with_args(self):
+        self.assertEqual(generate_formatter('LEFT',
+            arguments=[10, 'test']), 'LEFT:10,test')
+
+    def test_nested_functions(self):
+
+        integer_function = generate_formatter('INTEGER')
+        max_integer_function = generate_formatter('MAX',
+                inner_function=integer_function)
+        self.assertEqual('INTEGER-MAX', max_integer_function)
+
+    def test_nesting_with_args(self):
+        left_function = generate_formatter('LEFT',
+                arguments=[10]) 
+        integer_func = generate_formatter('INTEGER',
+                inner_function=left_function)
+
+        self.assertEqual('LEFT:10-INTEGER', integer_func)
 
 class TestRenderSelect(unittest.TestCase):
 
@@ -52,6 +76,63 @@ class TestRenderSelect(unittest.TestCase):
 
         self.assertEqual(result, 'SELECT *')
 
+    def test_aggregation_within_record(self):
+        """Ensure that aggregation within a query works when there is an alias
+        for that field.
+        """
+        from bigquery.query_builder import _render_select 
+
+        result_select = _render_select({
+            'start_time': {
+                'alias': 'timestamp',
+                'aggregation_level': 'RECORD',
+                'format': 'MAX'
+            }})
+        expected_select = 'SELECT MAX(start_time) WITHIN RECORD as timestamp' 
+        self.assertEqual(expected_select, result_select)
+
+    def test_aggregation_within_record_no_alias(self):
+        """
+        Ensure that aggregation within a query works when there is no alias for
+        that field.
+        """
+        from bigquery.query_builder import _render_select 
+
+        result_select = _render_select({
+            'start_time': {
+                'aggregation_level': 'RECORD',
+                'format': 'MAX'
+            }})
+        expected_select = 'SELECT MAX(start_time) WITHIN RECORD'
+        self.assertEqual(expected_select, result_select)
+
+    def test_formatting_if_statement_works_correctly(self):
+        """
+        Ensure that if we pass an IF formatter, the library generates correct
+        BigQuery. 
+        """
+        from bigquery.query_builder import _render_select 
+
+        result_select = _render_select({
+            'start_time': {
+                'format': 'IF:start_time != null,1,2'
+            }})
+        expected_select = 'SELECT IF(start_time != null, 1, 2)'
+        self.assertEqual(expected_select, result_select)
+
+    def test_multiple_formatting_with_if(self):
+        """
+        Ensure that if we wrap an if statement in another formatter, that syntax
+        is correctly generated.
+        """
+        from bigquery.query_builder import _render_select 
+
+        result_select = _render_select({
+            'start_time': {
+                'format': 'IF:start_time != null,1,2-MAX'
+            }})
+        expected_select = 'SELECT MAX(IF(start_time != null, 1, 2))'
+        self.assertEqual(expected_select, result_select)
 
 class TestRenderSources(unittest.TestCase):
 
