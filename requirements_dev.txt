@@ -3,4 +3,7 @@ rednose
 mock==1.0.1
 coverage
 nose-exclude
+six
+google-api-python-client
+dateutils
 tox

@@ -54,6 +54,23 @@ def render_query(dataset, tables, select=None, conditions=None,
 
     return query
 
+def generate_formatter(function_name, arguments=list(), inner_function=""):
+    """
+    Generates a string which the 'formatter' key in a select dictionary will
+    understand as a series of functions.
+
+    function_name : str
+        The name of the function to apply to your data
+    arguments: list, optional
+        A list of arguments to pass to that function
+    inner_function: str, optional
+        A string representation of a series of formatter functions that
+        function_name will be applied to.
+    """
+    arguments_string = ":" + ",".join(map(str, arguments)) if len(arguments) > 0 else ""
+    inner_function_with_suffix = inner_function + "-" if inner_function \
+        is not "" else ""
+    return inner_function_with_suffix + function_name + arguments_string
 
 def _render_select(selections):
     """Render the selection part of a query.
@@ -84,14 +101,23 @@ def _render_select(selections):
         original_name = name
         for options_dict in options:
             name = original_name
+            name_qualifiers = list()
+            aggregation_level = options_dict.get('aggregation_level')
+            if aggregation_level:
+                name_qualifiers.append("WITHIN {0}".format(aggregation_level))
+
             alias = options_dict.get('alias')
-            alias = "as %s" % alias if alias else ""
+            if alias:
+                name_qualifiers.append("as {0}".format(alias))
 
             formatter = options_dict.get('format')
             if formatter:
                 name = _format_select(formatter, name)
 
-            rendered_selections.append("%s %s" % (name, alias))
+            rendered_selections.append("{0} {1}".format(name,
+                " ".join(name_qualifiers)))
+            rendered_selections = [rendered_selection.strip() for \
+                    rendered_selection in rendered_selections]
 
     return "SELECT " + ", ".join(rendered_selections)
 
@@ -117,12 +143,19 @@ def _format_select(formatter, name):
 
     for caster in formatter.split('-'):
         if caster == 'SEC_TO_MICRO':
-            name = "%s*1000000" % name
+            name = "{0}*1000000".format(name)
         elif ':' in caster:
-            caster, args = caster.split(':')
-            name = "%s(%s,%s)" % (caster, name, args)
+            caster, joined_arguments = caster.split(':')
+            arguments = joined_arguments.split(',')
+            # For an IF, we need to assume that the user just passed the full
+            # condition as just an argument.
+            if caster == 'IF':
+                name = "IF({0}, {1}, {2})".format(arguments[0], arguments[1],
+                        arguments[2])
+            else:
+                name = "{0}({1},{2})".format(caster, name, ",".join(arguments))
         else:
-            name = "%s(%s)" % (caster, name)
+            name = "{0}({1})".format(caster, name)
 
     return name
 

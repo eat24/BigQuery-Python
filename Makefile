@@ -31,6 +31,6 @@ $(BUILD_DIR)/pip-dev.out: requirements_dev.txt
 unit:
 	nosetests
 
-integrations:
+integrations: py_dev_deps 
 	nosetests --logging-level=ERROR -a slow --with-coverage --cover-package=bigquery
 
