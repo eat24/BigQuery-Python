@@ -2,6 +2,13 @@ import six
 import unittest
 
 from bigquery.query_builder import generate_formatter
+from bigquery.query_builder import render_query
+from bigquery.query_builder import _render_conditions
+from bigquery.query_builder import _render_groupings
+from bigquery.query_builder import _render_having
+from bigquery.query_builder import _render_order
+from bigquery.query_builder import _render_select
+from bigquery.query_builder import _render_sources
 
 unittest.TestCase.maxDiff = None
 
@@ -32,7 +39,6 @@ class TestRenderSelect(unittest.TestCase):
 
     def test_multiple_selects(self):
         """Ensure that render select can handle multiple selects."""
-        from bigquery.query_builder import _render_select
 
         result = _render_select({
             'start_time': {'alias': 'TimeStamp'},
@@ -55,7 +61,6 @@ class TestRenderSelect(unittest.TestCase):
 
     def test_casting(self):
         """Ensure that render select can handle custom casting."""
-        from bigquery.query_builder import _render_select
 
         result = _render_select({
             'start_time': {
@@ -70,7 +75,6 @@ class TestRenderSelect(unittest.TestCase):
 
     def test_no_selects(self):
         """Ensure that render select can handle being passed no selects."""
-        from bigquery.query_builder import _render_select
 
         result = _render_select({})
 
@@ -80,7 +84,6 @@ class TestRenderSelect(unittest.TestCase):
         """Ensure that aggregation within a query works when there is an alias
         for that field.
         """
-        from bigquery.query_builder import _render_select 
 
         result_select = _render_select({
             'start_time': {
@@ -96,7 +99,6 @@ class TestRenderSelect(unittest.TestCase):
         Ensure that aggregation within a query works when there is no alias for
         that field.
         """
-        from bigquery.query_builder import _render_select 
 
         result_select = _render_select({
             'start_time': {
@@ -111,7 +113,6 @@ class TestRenderSelect(unittest.TestCase):
         Ensure that if we pass an IF formatter, the library generates correct
         BigQuery. 
         """
-        from bigquery.query_builder import _render_select 
 
         result_select = _render_select({
             'start_time': {
@@ -125,7 +126,6 @@ class TestRenderSelect(unittest.TestCase):
         Ensure that if we wrap an if statement in another formatter, that syntax
         is correctly generated.
         """
-        from bigquery.query_builder import _render_select 
 
         result_select = _render_select({
             'start_time': {
@@ -138,8 +138,6 @@ class TestRenderSources(unittest.TestCase):
 
     def test_multi_tables(self):
         """Ensure that render sources can handle multiple sources."""
-        from bigquery.query_builder import _render_sources
-
         result = _render_sources('spider', ['man', 'pig', 'bro'])
 
         self.assertEqual(
@@ -147,7 +145,6 @@ class TestRenderSources(unittest.TestCase):
 
     def test_no_tables(self):
         """Ensure that render sources can handle no tables."""
-        from bigquery.query_builder import _render_sources
 
         result = _render_sources('spider', [])
 
@@ -155,7 +152,6 @@ class TestRenderSources(unittest.TestCase):
 
     def test_no_dataset(self):
         """Ensure that render sources can handle no data sets."""
-        from bigquery.query_builder import _render_sources
 
         result = _render_sources('', ['man', 'pig', 'bro'])
 
@@ -163,7 +159,6 @@ class TestRenderSources(unittest.TestCase):
 
     def test_tables_in_date_range(self):
         """Ensure that render sources can handle tables in DATE RANGE."""
-        from bigquery.query_builder import _render_sources
 
         tables = {
             'date_range': True,
@@ -182,9 +177,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_single_condition(self):
         """Ensure that render conditions can handle a single condition."""
-        from bigquery.query_builder \
-            import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'bar',
@@ -199,9 +191,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_multiple_conditions(self):
         """Ensure that render conditions can handle multiple conditions."""
-        from bigquery.query_builder \
-            import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'a',
@@ -232,9 +221,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_multiple_comparators(self):
         """Ensure that render conditions can handle a multiple comparators."""
-        from bigquery.query_builder \
-            import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'foobar',
@@ -258,9 +244,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_boolean_field_type(self):
         """Ensure that render conditions can handle a boolean field."""
-        from bigquery.query_builder \
-            import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'foobar',
@@ -284,9 +267,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_in_comparator(self):
         """Ensure that render conditions can handle "IN" condition."""
-        from bigquery.query_builder \
-            import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'foobar',
@@ -317,8 +297,6 @@ class TestRenderConditions(unittest.TestCase):
 
     def test_between_comparator(self):
         """Ensure that render conditions can handle "BETWEEN" condition."""
-        from bigquery.query_builder import _render_conditions
-
         result = _render_conditions([
             {
                 'field': 'foobar',
@@ -356,16 +334,12 @@ class TestRenderOrder(unittest.TestCase):
 
     def test_order(self):
         """Ensure that render order can work under expected conditions."""
-        from bigquery.query_builder import _render_order
-
         result = _render_order({'fields': ['foo'], 'direction': 'desc'})
 
         self.assertEqual(result, "ORDER BY foo desc")
 
     def test_no_order(self):
         """Ensure that render order can work with out any arguments."""
-        from bigquery.query_builder import _render_order
-
         result = _render_order(None)
 
         self.assertEqual(result, "")
@@ -375,18 +349,12 @@ class TestGroupings(unittest.TestCase):
 
     def test_mutliple_fields(self):
         """Ensure that render grouping works with multiple fields."""
-        from bigquery.query_builder \
-            import _render_groupings
-
         result = _render_groupings(['foo', 'bar', 'shark'])
 
         self.assertEqual(result, "GROUP BY foo, bar, shark")
 
     def test_no_fields(self):
         """Ensure that render groupings can work with out any arguments."""
-        from bigquery.query_builder \
-            import _render_groupings
-
         result = _render_groupings(None)
 
         self.assertEqual(result, "")
@@ -396,9 +364,6 @@ class TestRenderHaving(unittest.TestCase):
 
     def test_mutliple_fields(self):
         """Ensure that render having works with multiple fields."""
-        from bigquery.query_builder \
-            import _render_having
-
         result = _render_having([
             {
                 'field': 'bar',
@@ -413,9 +378,6 @@ class TestRenderHaving(unittest.TestCase):
 
     def test_no_fields(self):
         """Ensure that render having can work with out any arguments."""
-        from bigquery.query_builder \
-            import _render_having
-
         result = _render_having(None)
 
         self.assertEqual(result, "")
@@ -425,8 +387,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_full_query(self):
         """Ensure that all the render query arguments work together."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -492,8 +452,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_empty_conditions(self):
         """Ensure that render query can handle an empty list of conditions."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -523,8 +481,6 @@ class TestRenderQuery(unittest.TestCase):
         """Ensure that render query can handle incorrectly formatted
         conditions.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -558,8 +514,6 @@ class TestRenderQuery(unittest.TestCase):
     def test_multiple_condition_values(self):
         """Ensure that render query can handle conditions with multiple values.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -610,8 +564,6 @@ class TestRenderQuery(unittest.TestCase):
     def test_negated_condition_value(self):
         """Ensure that render query can handle conditions with negated values.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -645,8 +597,6 @@ class TestRenderQuery(unittest.TestCase):
         """Ensure that render query can handle conditions with multiple negated
         values.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -686,8 +636,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_empty_order(self):
         """Ensure that render query can handle an empty formatted order."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -724,8 +672,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_incorrect_order(self):
         """Ensure that render query can handle inccorectly formatted order."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -762,8 +708,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_empty_select(self):
         """Ensure that render query corrently handles no selection."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -788,8 +732,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_no_alias(self):
         """Ensure that render query runs without an alias for a select."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -828,8 +770,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_formatting(self):
         """Ensure that render query runs with formatting a select."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -872,8 +812,6 @@ class TestRenderQuery(unittest.TestCase):
         """Ensure that render query runs with formatting a select for a
         column selected twice.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -925,8 +863,6 @@ class TestRenderQuery(unittest.TestCase):
         """Ensure that render query runs sec_to_micro formatting on a
         select.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -969,8 +905,6 @@ class TestRenderQuery(unittest.TestCase):
         """Ensure that render query returns None if there is no dataset or
         table.
         """
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset=None,
             tables=None,
@@ -995,8 +929,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_empty_groupings(self):
         """Ensure that render query can handle an empty list of groupings."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1'],
@@ -1023,8 +955,6 @@ class TestRenderQuery(unittest.TestCase):
 
     def test_multi_tables(self):
         """Ensure that render query arguments work with multiple tables."""
-        from bigquery.query_builder import render_query
-
         result = render_query(
             dataset='dataset',
             tables=['2013_06_appspot_1', '2013_07_appspot_1'],
